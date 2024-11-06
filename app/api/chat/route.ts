@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
+import { ChatCompletionMessageParam, ChatCompletionSystemMessageParam, ChatCompletionUserMessageParam, ChatCompletionAssistantMessageParam } from 'openai/resources/chat/completions';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -42,11 +42,12 @@ export async function POST(request: Request) {
       model: string;
     };
 
-    // 格式化消息
-    const formattedMessages: ChatCompletionMessageParam[] = messages.map(msg => ({
-      role: msg.role as 'user' | 'assistant' | 'system',
-      content: msg.content
-    }));
+    // 修改消息格式化逻辑
+    const formattedMessages: (ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam)[] = 
+      messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
 
     console.log('Using model:', model);
     console.log('Formatted messages:', formattedMessages);
@@ -55,12 +56,11 @@ export async function POST(request: Request) {
     
     if (model.includes('deepseek')) {
       try {
-        // DeepSeek API 调用
         console.log('Calling DeepSeek API...');
         completion = await deepseekClient.chat.completions.create({
           model: 'deepseek-chat',
           messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'system', content: SYSTEM_PROMPT } as ChatCompletionSystemMessageParam,
             ...formattedMessages
           ],
           temperature: 0.3,
@@ -74,8 +74,8 @@ export async function POST(request: Request) {
       }
     } else {
       // Anthropic API 调用
-      const messagesWithSystem = [
-        { role: 'system', content: SYSTEM_PROMPT },
+      const messagesWithSystem: (ChatCompletionSystemMessageParam | ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam)[] = [
+        { role: 'system', content: SYSTEM_PROMPT } as ChatCompletionSystemMessageParam,
         ...formattedMessages
       ];
       
