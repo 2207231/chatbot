@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions';
 
 interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -42,8 +43,8 @@ export async function POST(request: Request) {
     };
 
     // 格式化消息
-    const formattedMessages = messages.map((msg: ChatMessage) => ({
-      role: msg.role === 'user' ? 'user' : 'assistant',
+    const formattedMessages: ChatCompletionMessageParam[] = messages.map(msg => ({
+      role: msg.role as 'user' | 'assistant' | 'system',
       content: msg.content
     }));
 
